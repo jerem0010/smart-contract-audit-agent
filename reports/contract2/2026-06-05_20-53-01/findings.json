@@ -1,0 +1,40 @@
+{
+  "findings": [
+    {
+      "id": "S-001",
+      "check": "reentrancy-eth",
+      "impact": "High",
+      "confidence": "Medium",
+      "contract": "Vault",
+      "function": "withdraw(uint256)",
+      "filename": "contract2.sol",
+      "start_line": 11,
+      "end_line": 19,
+      "description": "Reentrancy in Vault.withdraw(uint256) (contract2.sol#11-19):\n\tExternal calls:\n\t- (success,None) = msg.sender.call{value: amount}() (contract2.sol#15)\n\tState variables written after the call(s):\n\t- balances[msg.sender] -= amount (contract2.sol#18)\n\tVault.balances (contract2.sol#5) can be used in cross function reentrancies:\n\t- Vault.balances (contract2.sol#5)\n\t- Vault.deposit() (contract2.sol#7-9)\n\t- Vault.withdraw(uint256) (contract2.sol#11-19)\n"
+    },
+    {
+      "id": "S-002",
+      "check": "solc-version",
+      "impact": "Informational",
+      "confidence": "High",
+      "contract": null,
+      "function": null,
+      "filename": null,
+      "start_line": null,
+      "end_line": null,
+      "description": "Version constraint ^0.8.20 contains known severe issues (https://solidity.readthedocs.io/en/latest/bugs.html)\n\t- VerbatimInvalidDeduplication\n\t- FullInlinerNonExpressionSplitArgumentEvaluationOrder\n\t- MissingSideEffectsOnSelectorAccess.\nIt is used by:\n\t- ^0.8.20 (contract2.sol#2)\n"
+    },
+    {
+      "id": "S-003",
+      "check": "low-level-calls",
+      "impact": "Informational",
+      "confidence": "High",
+      "contract": "Vault",
+      "function": "withdraw(uint256)",
+      "filename": "contract2.sol",
+      "start_line": 11,
+      "end_line": 19,
+      "description": "Low level call in Vault.withdraw(uint256) (contract2.sol#11-19):\n\t- (success,None) = msg.sender.call{value: amount}() (contract2.sol#15)\n"
+    }
+  ]
+}
