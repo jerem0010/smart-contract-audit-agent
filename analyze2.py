@@ -1,6 +1,36 @@
 import json
+import sys
+import subprocess
+from datetime import datetime
 from pathlib import Path
 
+def create_run_directory(target_path: Path) -> Path:
+    contract_name = target_path.stem
+    timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+
+    run_dir = Path("reports") / contract_name / timestamp
+    run_dir.mkdir(parents=True, exist_ok=True)
+
+    return run_dir
+
+def run_slither(target_path: Path, output_path: Path) -> None:
+    command = [
+        "slither",
+        str(target_path),
+        "--json",
+        str(output_path),
+    ]
+
+    result = subprocess.run(
+        command,
+        capture_output=True,
+        text=True,
+    )
+
+    if not output_path.exists():
+        print(result.stdout)
+        print(result.stderr)
+        raise RuntimeError("Slither did not generate the JSON output file.")
 
 def load_slither_results(path: Path) -> dict:
     if not path.exists():
@@ -158,7 +188,28 @@ def write_findings_json(findings: list[dict], output_path: Path) -> None:
 
 
 def main():
-    slither_path = Path("slither-output.json")
+    if len(sys.argv) != 2:
+        print("Usage: python3 analyze2.py <solidity-file>")
+        print("Example: python3 analyze2.py contract.sol")
+        sys.exit(1)
+
+    target_path = Path(sys.argv[1])
+
+    if not target_path.exists():
+        print(f"Error: target file not found: {target_path}")
+        sys.exit(1)
+
+    run_dir = create_run_directory(target_path)
+
+    slither_path = run_dir / "slither-output.json"
+    report_path = run_dir / "report.md"
+    findings_path = run_dir / "findings.json"
+
+    print(f"Analyzing: {target_path}")
+    print(f"Output directory: {run_dir}")
+    print()
+
+    run_slither(target_path, slither_path)
 
     slither_data = load_slither_results(slither_path)
     findings = extract_findings(slither_data)
@@ -166,11 +217,9 @@ def main():
 
     print_report(findings)
 
-    report_path = Path("report.md")
     write_markdown_report(findings, report_path)
     print(f"Markdown report written to {report_path}")
 
-    findings_path = Path("findings.json")
     write_findings_json(findings, findings_path)
     print(f"Findings JSON written to {findings_path}")
 
