@@ -70,16 +70,6 @@ slither-output.json
 - Foundry-compatible Solidity projects
 - Markdown / JSON report generation
 
-## Learning Goals
-
-This project helped me practice:
-
-- smart contract static analysis
-- Slither JSON parsing
-- audit report formatting
-- vulnerability severity sorting
-- building security tooling
-- thinking about automation in audit workflows
 
 ## Roadmap
 
@@ -93,7 +83,6 @@ Possible future improvements:
 - Evaluation on vulnerable-contract datasets
 - Precision / recall / F1 scoring
 
-## Disclaimer
 
 This tool is educational and experimental.  
 It should not be used as a replacement for a manual smart contract audit.
