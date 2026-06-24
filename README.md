@@ -83,6 +83,3 @@ Possible future improvements:
 - Evaluation on vulnerable-contract datasets
 - Precision / recall / F1 scoring
 
-
-This tool is educational and experimental.  
-It should not be used as a replacement for a manual smart contract audit.
