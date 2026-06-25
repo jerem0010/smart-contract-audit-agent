@@ -1,3 +1,9 @@
+try:
+    from src.models import Finding, Location
+except ModuleNotFoundError:
+    from models import Finding, Location
+
+
 def get_detector_results(slither_data: dict) -> list[dict]:
     return slither_data.get("results", {}).get("detectors", [])
 
@@ -82,7 +88,7 @@ def empty_location() -> dict:
     }
 
 
-def extract_findings(slither_data: dict) -> list[dict]:
+def extract_findings(slither_data: dict) -> list[Finding]:
     detectors = get_detector_results(slither_data)
 
     findings = []
@@ -93,28 +99,23 @@ def extract_findings(slither_data: dict) -> list[dict]:
         check = detector.get("check")
         severity = detector.get("impact")
 
-        finding = {
-            "id": f"S-{i:03d}",
-            "tool": "slither",
-            "check": detector.get("check"),
-            "title": build_title(check, description),
-            "severity": severity,
-            "impact": severity,
-            "confidence": detector.get("confidence"),
-            "contract": location["contract"],
-            "function": location["function"],
-            "filename": location["filename"],
-            "start_line": location["start_line"],
-            "end_line": location["end_line"],
-            "location": {
-                "file": location["filename"],
-                "start_line": location["start_line"],
-                "end_line": location["end_line"],
-            },
-            "description": description,
-            "recommendation": build_recommendation(check),
-            "status": "Open",
-        }
+        finding = Finding(
+            id=f"S-{i:03d}",
+            tool="slither",
+            check=detector.get("check"),
+            title=build_title(check, description),
+            severity=severity,
+            confidence=detector.get("confidence"),
+            contract=location["contract"],
+            function=location["function"],
+            location=Location(
+                file=location["filename"],
+                start_line=location["start_line"],
+                end_line=location["end_line"],
+            ),
+            description=description,
+            recommendation=build_recommendation(check),
+        )
 
         findings.append(finding)
 
@@ -146,7 +147,7 @@ def build_recommendation(check: str | None) -> str:
     )
 
 
-def sort_findings_by_impact(findings: list[dict]) -> list[dict]:
+def sort_findings_by_impact(findings: list[Finding]) -> list[Finding]:
     impact_order = {
         "Critical": 0,
         "High": 0,
@@ -158,5 +159,5 @@ def sort_findings_by_impact(findings: list[dict]) -> list[dict]:
 
     return sorted(
         findings,
-        key=lambda finding: impact_order.get(finding.get("severity"), 999),
+        key=lambda finding: impact_order.get(finding.severity, 999),
     )

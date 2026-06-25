@@ -1,8 +1,13 @@
 import json
 from pathlib import Path
 
+try:
+    from src.models import Finding
+except ModuleNotFoundError:
+    from models import Finding
 
-def print_report(findings: list[dict]) -> None:
+
+def print_report(findings: list[Finding]) -> None:
     print("Mini Slither Report")
     print("===================")
     print()
@@ -12,41 +17,33 @@ def print_report(findings: list[dict]) -> None:
         return
 
     for finding in findings:
-        print(f"{finding['id']} - {finding['title']}")
-        print(f"Severity: {finding['severity']}")
-        print(f"Confidence: {finding['confidence']}")
-        print(f"Contract: {finding['contract'] or 'N/A'}")
-        print(f"Function: {finding['function'] or 'N/A'}")
+        print(f"{finding.id} - {finding.title}")
+        print(f"Severity: {finding.severity}")
+        print(f"Confidence: {finding.confidence}")
+        print(f"Contract: {finding.contract or 'N/A'}")
+        print(f"Function: {finding.function or 'N/A'}")
         print(f"Location: {format_location(finding)}")
         print(f"Triage: {format_triage_summary(finding)}")
         print()
-        print(finding["description"])
+        print(finding.description)
         print("-" * 80)
 
 
-def format_location(finding: dict) -> str:
-    location = finding.get("location", {})
-    filename = location.get("file") or finding.get("filename")
-    start_line = location.get("start_line") or finding.get("start_line")
-    end_line = location.get("end_line") or finding.get("end_line")
-
-    if filename is None or start_line is None or end_line is None:
-        return "N/A"
-
-    return f"{filename}#{start_line}-{end_line}"
+def format_location(finding: Finding) -> str:
+    return finding.location.format()
 
 
-def format_triage_summary(finding: dict) -> str:
-    triage = finding.get("triage", {})
-    verdict = triage.get("verdict", "Needs Review")
+def format_triage_summary(finding: Finding) -> str:
+    if finding.triage is None:
+        return "Needs Review"
 
-    if triage.get("is_duplicate"):
-        return f"{verdict} (duplicate of {triage.get('duplicate_of')})"
+    if finding.triage.is_duplicate:
+        return f"{finding.triage.verdict} (duplicate of {finding.triage.duplicate_of})"
 
-    return verdict
+    return finding.triage.verdict
 
 
-def count_findings_by_severity(findings: list[dict]) -> dict[str, int]:
+def count_findings_by_severity(findings: list[Finding]) -> dict[str, int]:
     counts = {
         "Critical": 0,
         "High": 0,
@@ -57,28 +54,27 @@ def count_findings_by_severity(findings: list[dict]) -> dict[str, int]:
     }
 
     for finding in findings:
-        severity = finding.get("severity") or "Unknown"
+        severity = finding.severity or "Unknown"
         counts[severity] = counts.get(severity, 0) + 1
 
     return counts
 
 
-def count_findings_by_triage_verdict(findings: list[dict]) -> dict[str, int]:
+def count_findings_by_triage_verdict(findings: list[Finding]) -> dict[str, int]:
     counts = {}
 
     for finding in findings:
-        triage = finding.get("triage", {})
-        verdict = triage.get("verdict", "Needs Review")
+        verdict = finding.triage.verdict if finding.triage else "Needs Review"
         counts[verdict] = counts.get(verdict, 0) + 1
 
     return counts
 
 
-def count_duplicate_findings(findings: list[dict]) -> int:
-    return sum(1 for finding in findings if finding.get("triage", {}).get("is_duplicate"))
+def count_duplicate_findings(findings: list[Finding]) -> int:
+    return sum(1 for finding in findings if finding.triage and finding.triage.is_duplicate)
 
 
-def write_markdown_report(findings: list[dict], output_path: Path, target_path: Path) -> None:
+def write_markdown_report(findings: list[Finding], output_path: Path, target_path: Path) -> None:
     severity_counts = count_findings_by_severity(findings)
     triage_counts = count_findings_by_triage_verdict(findings)
     lines = []
@@ -128,9 +124,9 @@ def write_markdown_report(findings: list[dict], output_path: Path, target_path: 
     lines.append("| --- | --- | --- | --- | --- | --- |")
     for finding in findings:
         lines.append(
-            f"| {finding['id']} | {finding['severity']} | {format_triage_summary(finding)} | "
-            f"{finding['confidence']} | "
-            f"{finding['title']} | `{format_location(finding)}` |"
+            f"| {finding.id} | {finding.severity} | {format_triage_summary(finding)} | "
+            f"{finding.confidence} | "
+            f"{finding.title} | `{format_location(finding)}` |"
         )
 
     lines.append("")
@@ -140,38 +136,39 @@ def write_markdown_report(findings: list[dict], output_path: Path, target_path: 
     for finding in findings:
         location = format_location(finding)
 
-        lines.append(f"### {finding['id']} - {finding['title']}")
+        lines.append(f"### {finding.id} - {finding.title}")
         lines.append("")
-        lines.append(f"- **Severity:** {finding['severity']}")
-        lines.append(f"- **Confidence:** {finding['confidence']}")
-        lines.append(f"- **Check:** `{finding['check']}`")
-        lines.append(f"- **Contract:** `{finding['contract'] or 'N/A'}`")
-        lines.append(f"- **Function:** `{finding['function'] or 'N/A'}`")
+        lines.append(f"- **Severity:** {finding.severity}")
+        lines.append(f"- **Confidence:** {finding.confidence}")
+        lines.append(f"- **Check:** `{finding.check}`")
+        lines.append(f"- **Contract:** `{finding.contract or 'N/A'}`")
+        lines.append(f"- **Function:** `{finding.function or 'N/A'}`")
         lines.append(f"- **Location:** `{location}`")
-        lines.append(f"- **Status:** {finding['status']}")
+        lines.append(f"- **Status:** {finding.status}")
         lines.append(f"- **Triage:** {format_triage_summary(finding)}")
         lines.append("")
         lines.append("#### Triage Reason")
         lines.append("")
-        lines.append(finding.get("triage", {}).get("reason", "No triage reason available."))
+        triage_reason = finding.triage.reason if finding.triage else "No triage reason available."
+        lines.append(triage_reason)
         lines.append("")
         lines.append("#### Description")
         lines.append("")
         lines.append("```txt")
-        lines.append(finding["description"] or "")
+        lines.append(finding.description or "")
         lines.append("```")
         lines.append("")
         lines.append("#### Recommendation")
         lines.append("")
-        lines.append(finding["recommendation"])
+        lines.append(finding.recommendation)
         lines.append("")
 
     output_path.write_text("\n".join(lines))
 
 
-def write_findings_json(findings: list[dict], output_path: Path) -> None:
+def write_findings_json(findings: list[Finding], output_path: Path) -> None:
     output = {
-        "findings": findings
+        "findings": [finding.to_dict() for finding in findings]
     }
 
     output_path.write_text(json.dumps(output, indent=2))

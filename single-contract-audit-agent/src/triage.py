@@ -1,3 +1,9 @@
+try:
+    from src.models import Finding, Triage
+except ModuleNotFoundError:
+    from models import Finding, Triage
+
+
 TRIAGE_VERDICTS = {
     "CONFIRMED": "Confirmed",
     "LIKELY": "Likely",
@@ -7,7 +13,7 @@ TRIAGE_VERDICTS = {
 }
 
 
-def apply_triage(findings: list[dict]) -> list[dict]:
+def apply_triage(findings: list[Finding]) -> list[Finding]:
     seen_groups = {}
 
     for finding in findings:
@@ -15,21 +21,21 @@ def apply_triage(findings: list[dict]) -> list[dict]:
         duplicate_key = build_duplicate_key(finding)
 
         if duplicate_key in seen_groups:
-            triage["is_duplicate"] = True
-            triage["duplicate_of"] = seen_groups[duplicate_key]
+            triage.is_duplicate = True
+            triage.duplicate_of = seen_groups[duplicate_key]
         else:
-            triage["is_duplicate"] = False
-            triage["duplicate_of"] = None
-            seen_groups[duplicate_key] = finding["id"]
+            triage.is_duplicate = False
+            triage.duplicate_of = None
+            seen_groups[duplicate_key] = finding.id
 
-        finding["triage"] = triage
+        finding.triage = triage
 
     return findings
 
 
-def classify_finding(finding: dict) -> dict:
-    check = finding.get("check")
-    severity = finding.get("severity")
+def classify_finding(finding: Finding) -> Triage:
+    check = finding.check
+    severity = finding.severity
 
     if severity in {"Informational", "Optimization"}:
         return build_triage(
@@ -73,16 +79,13 @@ def classify_finding(finding: dict) -> dict:
     )
 
 
-def build_triage(verdict: str, reason: str) -> dict:
-    return {
-        "verdict": verdict,
-        "reason": reason,
-    }
+def build_triage(verdict: str, reason: str) -> Triage:
+    return Triage(verdict=verdict, reason=reason)
 
 
-def build_duplicate_key(finding: dict) -> tuple:
+def build_duplicate_key(finding: Finding) -> tuple:
     return (
-        finding.get("check"),
-        finding.get("contract"),
-        finding.get("function"),
+        finding.check,
+        finding.contract,
+        finding.function,
     )
