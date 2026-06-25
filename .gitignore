@@ -1,0 +1,25 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+env/
+
+# Environment
+.env
+
+# Slither / analysis outputs
+slither.db.json
+crytic-export/
+*.sarif
+
+# Foundry
+out/
+cache/
+broadcast/
+
+# OS / editor
+.DS_Store
+.vscode/
+.idea/
+reports/
