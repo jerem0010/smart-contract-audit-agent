@@ -12,6 +12,7 @@ The tool:
 - Exports Slither JSON output
 - Parses detector results
 - Extracts findings
+- Applies deterministic triage rules
 - Sorts findings by impact
 - Generates:
   - `report.md`
@@ -28,6 +29,8 @@ Slither static analysis
 JSON output
       ↓
 Finding parser
+      ↓
+Triage rules
       ↓
 Severity sorting
       ↓
@@ -49,8 +52,10 @@ This project is an early step toward a larger audit assistant combining:
 ## Usage
 
 ```bash
-python3 analyze2.py contract.sol
+python3 src/main.py examples/contract2.sol
 ```
+
+You can pass either a single Solidity file or a Solidity project supported by Slither.
 
 ## Output
 
@@ -60,6 +65,22 @@ After running the tool, the project can generate:
 report.md
 findings.json
 slither-output.json
+```
+
+## Project Structure
+
+```txt
+src/main.py      CLI entrypoint and pipeline orchestration
+src/slither.py   Slither execution and JSON loading
+src/parser.py    Slither detector normalization into findings
+src/triage.py    Deterministic triage rules
+src/report.py    Console, Markdown, and JSON reporting
+```
+
+## Tests
+
+```bash
+python3 -m unittest
 ```
 
 ## Tech Stack
@@ -75,11 +96,9 @@ slither-output.json
 
 Possible future improvements:
 
-- Better finding normalization
 - Pydantic schemas for structured findings
 - Support for full Solidity repositories
 - Foundry test integration
 - LLM-assisted explanations
 - Evaluation on vulnerable-contract datasets
 - Precision / recall / F1 scoring
-
